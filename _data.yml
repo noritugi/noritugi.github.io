@@ -1,0 +1,19 @@
+lang: ja
+
+home:
+  welcome: インターネット乗継ログ
+
+menu_links:
+  - text: Mastodon↗️ 
+    href: https://uni.vuwuv.com/@noritsugi
+extra_head: []
+
+# Metas plugin https://lume.land/plugins/metas/#description
+metas:
+  site: 乗継ログ
+  description: 乗継ログ
+  title: "=title"
+  image: "=image"
+  fediverse: "@noritsugi@uni.vuwuv.com"
+  lang: ja
+  robots: enable
