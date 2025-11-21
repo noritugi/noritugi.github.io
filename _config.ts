@@ -2,7 +2,11 @@ import lume from "lume/mod.ts";
 import blog from "blog/mod.ts";
 import markdown from "lume/plugins/markdown.ts";
 
-const site = lume();
+//const site = lume();
+// ★ ここにサイトの URL を設定（最後のスラッシュは付けない）
+const site = lume({
+  location: new URL("https://blog.vuwuv.com"),
+});
 
 site.use(markdown({
   options: {
