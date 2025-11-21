@@ -1,4 +1,4 @@
-# noritsugi-log
+# 乗継ログ
 
 * https://blog.vuwuv.com
 
