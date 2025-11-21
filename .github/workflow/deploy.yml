@@ -1,0 +1,130 @@
+name: Build, Toot and Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ---------- 変更ファイルを特定 ----------
+      - name: Detect changed markdown
+        id: detect_md
+        run: |
+          FILE=$(git diff --name-only HEAD~1 HEAD | grep '\.md$' | head -n 1)
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+
+      # ---------- front matter の title を抽出 ----------
+      - name: Extract title
+        id: meta
+        run: |
+          FILE="${{ steps.detect_md.outputs.file }}"
+          if [ -z "$FILE" ]; then
+            echo "title=No Title" >> $GITHUB_OUTPUT
+            echo "slug=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          TITLE=$(grep "^title:" "$FILE" | sed 's/title:[ ]*//')
+          SLUG=$(basename "$FILE" .md)
+
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "slug=$SLUG" >> $GITHUB_OUTPUT
+
+      # ---------- 公開URL作成 ----------
+      - name: Make public post URL
+        id: url
+        run: |
+          SITE_URL="https://blog.vuwuv.com"
+          SLUG="${{ steps.meta.outputs.slug }}"
+          POST_URL="$SITE_URL/posts/$SLUG/"
+
+          echo "post_url=$POST_URL" >> $GITHUB_OUTPUT
+
+      # ---------- no-toot 対応 ----------
+      - name: Check [no-toot]
+        id: detect
+        run: |
+          if git log -1 --pretty=%B | grep -qi "\[no-toot\]"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ---------- Mastodon トゥート ----------
+      - name: Send toot
+        if: steps.detect.outputs.skip == 'false'
+        id: mastodon
+        uses: cbrgm/mastodon-github-action@v2
+        with:
+          access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          url: ${{ secrets.MASTODON_URL }}
+          message: |
+            📘新しいブログ記事を公開しました！
+
+            タイトル: ${{ steps.meta.outputs.title }}
+            URL: ${{ steps.url.outputs.post_url }}
+
+            📭このトゥートにリプライすると記事にコメントできます。
+
+      - name: Get toot URL
+        if: steps.detect.outputs.skip == 'false'
+        id: tooturl
+        run: |
+          echo "url=${{ steps.mastodon.outputs.url }}" >> $GITHUB_OUTPUT
+
+      # ---------- front matterにコメントURLを書き込み ----------
+      - name: Insert comment toot URL
+        if: steps.detect.outputs.skip == 'false'
+        run: |
+          FILE="${{ steps.detect_md.outputs.file }}"
+          TOOT_URL="${{ steps.tooturl.outputs.url }}"
+
+          awk -v url="$TOOT_URL" '
+            BEGIN { in_front=0 }
+            /^---/ {
+              if(in_front==0){ in_front=1 }
+              else{ in_front=2 }
+            }
+            {
+              if(in_front==1 && $0 ~ /^comments:/){ next }
+              if(in_front==1 && $0 ~ /^  src:/){ next }
+              print
+              if(in_front==1 && $0 ~ /^tags:/){
+                print "comments:"
+                print "  src: \"" url "\""
+              }
+            }
+          ' "$FILE" > tmp && mv tmp "$FILE"
+
+      - name: Commit updated front matter
+        if: steps.detect.outputs.skip == 'false'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Add Mastodon comment URL"
+          git push origin main
+
+      # ---------- Deno / Lume Build ----------
+      - uses: denoland/setup-deno@v2
+
+      - name: Build Lume
+        run: deno task build
+
+      # ---------- Netlify Deploy ----------
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './_site'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
