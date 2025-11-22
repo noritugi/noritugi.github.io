@@ -42,6 +42,10 @@
     "serve": {
       "description": "Run and serve the site for development",
       "command": "deno task lume -s"
+    },
+    "post": {
+      "description": "Publish a Markdown post to Mastodon",
+      "command": "deno run --allow-net --allow-env --allow-read --env post-toot.ts"
     }
   },
   "compilerOptions": {

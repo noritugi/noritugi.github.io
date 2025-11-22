@@ -1,12 +1,13 @@
 ---
 title: AkkomaをやめてMastodonにした
-description:  低リソースでMastodonインスタンス
-date: 2023-09-14
+description: 低リソースでMastodonインスタンス
+date: 2023-09-14T00:00:00.000Z
 tags:
   - server
   - Mastodon
   - fediverse
 ---
+
 <!-- more -->
 
 ## 理由
