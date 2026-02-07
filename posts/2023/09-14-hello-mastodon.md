@@ -70,8 +70,3 @@ RAILS_ENV=production bin/rails runner "UserMailer.new.mail(to:'admin@example.com
 
 ## まとめ
 Mastodonインスタンスにメモリ1GBでは正直つらい😭
-
-
-<iframe src="https://uni.vuwuv.com/@noritsugi/111502707067824361/embed" class="mastodon-embed" style="max-width: 100%; border: 0" width="800" allowfullscreen="allowfullscreen"></iframe><script src="https://uni.vuwuv.com/embed.js" async="async"></script>
-
-<iframe src="https://uni.vuwuv.com/@noritsugi/111502988244619603/embed" class="mastodon-embed" style="max-width: 100%; border: 0" width="800" allowfullscreen="allowfullscreen"></iframe><script src="https://uni.vuwuv.com/embed.js" async="async"></script>

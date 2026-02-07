@@ -1,18 +1,33 @@
+import type { Plugin } from "npm:unified";
 import { visit } from "npm:unist-util-visit";
+import type { Root, Text } from "npm:@types/mdast";
 
-function formatJST(dateString: string) {
-  const d = new Date(dateString);
-  return d.toLocaleString("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+/* ------------------------------
+ * 型
+ * ----------------------------- */
 
-function placeholderHTML() {
+type PleromaStatus = {
+  url: string;
+  created_at: string;
+  media_attachments: Array<{
+    id: string;
+    type: "image" | "video" | string;
+    description: string | null;
+    url: string;
+  }>;
+};
+
+/* ------------------------------
+ * キャッシュ（SSG 1ビルド内）
+ * ----------------------------- */
+
+const statusCache = new Map<string, PleromaStatus>();
+
+/* ------------------------------
+ * UI: フォールバックHTML
+ * ----------------------------- */
+
+function fallbackHTML(): string {
   return `
 <div class="max-w-md text-center mx-auto my-8">
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -34,78 +49,112 @@ function placeholderHTML() {
 `;
 }
 
-export default function remarkPleroma() {
-  return async (tree) => {
-    const tasks: Promise<void>[] = [];
+/* ------------------------------
+ * UI: 正常表示HTML
+ * ----------------------------- */
 
-    visit(tree, "text", (node, index, parent) => {
-      const match = node.value.match(
-        /\{\{<\s*pleroma\s+instance="([^"]+)"\s+id="([^"]+)"\s*>\}\}/
-      );
-      if (!match) return;
+function renderStatus(status: PleromaStatus): string {
+  const date = new Date(status.created_at);
+  const jp = new Intl.DateTimeFormat("ja-JP", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Tokyo",
+  }).format(date);
 
-      const [, instance, id] = match;
-
-      tasks.push((async () => {
-        try {
-          const api = `https://${instance}/api/v1/statuses/${id}`;
-          const res = await fetch(api, { headers: { accept: "application/json" } });
-
-          if (!res.ok) throw new Error("fetch failed");
-
-          const json = await res.json();
-
-          const created = formatJST(json.created_at);
-          const noticeUrl = json.url;
-
-          const mediaHTML = (json.media_attachments ?? []).map((m) => {
-            const media =
-              m.type === "video"
-                ? `<video controls class="w-full rounded-lg">
-                     <source src="${m.url}" type="${m.pleroma?.mime_type ?? "video/mp4"}">
-                   </video>`
-                : `<img src="${m.url}" alt="${m.description ?? ""}"
-                     class="w-full rounded-lg" loading="lazy" />`;
-
-            const desc = m.description
-              ? `<p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                   ${m.description}
-                 </p>`
-              : "";
-
-            return `
-<div class="space-y-1">
-  ${media}
-  ${desc}
-</div>
+  const media = status.media_attachments
+    .map((m) => {
+      if (m.type === "video") {
+        return `
+<figure class="my-4">
+  <video controls class="w-full rounded-lg">
+    <source src="${m.url}">
+  </video>
+  ${m.description ? `<figcaption class="mt-1 text-center text-sm text-gray-500">${m.description}</figcaption>` : ""}
+</figure>
 `;
-          }).join("");
+      }
 
-          parent.children[index] = {
-            type: "html",
-            value: `
-<div class="pleroma-embed my-8 space-y-4">
-  <a href="${noticeUrl}"
-     class="block text-sm text-gray-500 hover:underline"
-     target="_blank" rel="noopener">
-    ${created}
+      return `
+<figure class="my-4">
+  <img src="${m.url}" class="w-full rounded-lg" loading="lazy" />
+  ${m.description ? `<figcaption class="mt-1 text-center text-sm text-gray-500">${m.description}</figcaption>` : ""}
+</figure>
+`;
+    })
+    .join("");
+
+  return `
+<section class="my-8 space-y-4">
+  <a href="${status.url}" class="text-sm text-blue-600 dark:text-blue-400 underline">
+    投稿日時: ${jp}
   </a>
-
-  <div class="flex flex-col gap-6">
-    ${mediaHTML}
+  <div class="flex flex-col gap-4">
+    ${media}
   </div>
-</div>
-`,
-          };
-        } catch {
-          parent.children[index] = {
-            type: "html",
-            value: placeholderHTML(),
-          };
-        }
-      })());
+</section>
+`;
+}
+
+/* ------------------------------
+ * fetch（低負荷）
+ * ----------------------------- */
+
+async function fetchStatus(instance: string, id: string): Promise<PleromaStatus> {
+  const key = `${instance}:${id}`;
+  if (statusCache.has(key)) {
+    return statusCache.get(key)!;
+  }
+
+  const res = await fetch(`https://${instance}/api/v1/statuses/${id}`);
+  if (!res.ok) throw new Error("fetch failed");
+
+  const json = (await res.json()) as PleromaStatus;
+  statusCache.set(key, json);
+  return json;
+}
+
+/* ------------------------------
+ * Hugo風 shortcode パーサ
+ * ----------------------------- */
+
+function parseShortcode(value: string): { instance: string; id: string } | null {
+  const match = value.match(
+    /\{\{<\s*pleroma\s+instance="([^"]+)"\s+id="([^"]+)"\s*>}}/
+  );
+  if (!match) return null;
+  return { instance: match[1], id: match[2] };
+}
+
+/* ------------------------------
+ * remark plugin 本体
+ * ----------------------------- */
+
+const remarkShortcode: Plugin<[], Root> = function () {
+  return async function transformer(tree) {
+    const jobs: Promise<void>[] = [];
+
+    visit(tree, "text", (node: Text, index, parent) => {
+      const parsed = parseShortcode(node.value);
+      if (!parsed || !parent || index === undefined) return;
+
+      const placeholder = { type: "html", value: "<!-- PLEROMA -->" };
+
+      parent.children[index] = placeholder as any;
+
+      jobs.push(
+        (async () => {
+          try {
+            const status = await fetchStatus(parsed.instance, parsed.id);
+            placeholder.value = renderStatus(status);
+          } catch {
+            placeholder.value = fallbackHTML();
+          }
+        })()
+      );
     });
 
-    await Promise.all(tasks);
+    await Promise.all(jobs);
   };
-}
+};
+
+export default remarkShortcode;
