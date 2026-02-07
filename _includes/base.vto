@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>乗継ログ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles/tailwind.css" />
+  </head>
+
+  <body class="min-h-screen flex flex-col bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+    {{ comp header }}
+    {{ /comp }}
+    <main class="flex-1">
+      {{ content }}
+    </main>
+
+    {{# footerは今の所コメントアウト #}}
+    {{# {{ comp footer }}
+    {{ /comp }} #}}
+  </body>
+</html>

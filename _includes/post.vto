@@ -1,0 +1,40 @@
+---
+layout: base.vto
+---
+
+<article class="mx-auto max-w-prose px-4 py-16">
+  <header class="mb-10">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+      {{ title }}
+    </h1>
+
+    <time class="text-xl text-gray-500 dark:text-gray-400 font-serif">
+      {{ date.getFullYear() }}年
+      {{ String(date.getMonth() + 1).padStart(2, "0") }}月
+      {{ String(date.getDate()).padStart(2, "0") }}日
+    </time>
+  </header>
+
+  <div class="
+    prose
+    prose-slate
+    dark:prose-invert
+    prose-h2:text-gray-900
+    dark:prose-h2:text-gray-100
+    prose-h3:text-gray-900
+    dark:prose-h3:text-gray-100
+    prose-h4:text-gray-900
+    dark:prose-h4:text-gray-100
+    prose-h5:text-gray-900
+    dark:prose-h5:text-gray-100
+    prose-h6:text-gray-900
+    dark:prose-h6:text-gray-100
+    prose-a:text-sky-600
+    hover:prose-a:text-sky-800
+    dark:prose-a:text-sky-400
+    dark:hover:prose-a:text-sky-200
+    max-w-none
+  ">
+    {{ content }}
+  </div>
+</article>
