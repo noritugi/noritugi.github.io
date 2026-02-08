@@ -33,5 +33,6 @@ site.preprocess([".html"], (pages) => {
 //   }
 // });
 
-site.add("styles/tailwind.css"); //Add the entry point
+site.add("styles/tailwind.css");
+site.add("styles/pagefind-dark.css");
 export default site;

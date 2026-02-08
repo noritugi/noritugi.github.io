@@ -1,0 +1,20 @@
+/* ライトモード（デフォルト） */
+:root {
+  --pagefind-ui-primary: #111827;
+  --pagefind-ui-text: #111827;
+  --pagefind-ui-background: #ffffff;
+  --pagefind-ui-border: #e5e7eb;
+}
+
+/* ダークモード */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pagefind-ui-primary: #e5e7eb;
+    --pagefind-ui-text: #e5e7eb;
+    --pagefind-ui-background: #020617;
+    --pagefind-ui-border: #334155;
+    --pagefind-ui-tag: #1e293b;
+    --pagefind-ui-tag-text: #e5e7eb;
+    --pagefind-ui-highlight: #38bdf8;
+  }
+}
