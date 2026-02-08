@@ -25,6 +25,7 @@ title: Front Page
 
 {{ void years.sort((a, b) => b - a) }}
 
+<!-- 年フィルタ -->
 <div class="mx-auto max-w-xl px-4 space-y-4 mb-8">
   <details class="group relative overflow-hidden rounded border border-gray-300 shadow-sm dark:border-gray-600" open>
     <summary
@@ -42,77 +43,115 @@ title: Front Page
       class="divide-y divide-gray-300 border-t border-gray-300 bg-white dark:divide-gray-600 dark:border-gray-600 dark:bg-gray-900">
       <fieldset class="p-3 space-y-3">
         {{ for year of years }}
-        <label class="inline-flex items-center gap-3">
-          <input type="checkbox"
-            class="year-filter size-5 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:checked:bg-blue-600"
-            value="{{ year }}" />
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {{ year }}年
-          </span>
-        </label>
+          <label class="inline-flex items-center gap-3">
+            <input
+              type="checkbox"
+              class="year-filter size-5 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:checked:bg-blue-600"
+              value="{{ year }}"
+            />
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+              {{ year }}年
+            </span>
+          </label>
         {{ /for }}
       </fieldset>
     </div>
   </details>
 </div>
 
-{{ set posts = search.pages("url^=/posts/", "date=desc").slice(0, 50) }}
-
+<!-- 記事一覧 -->
 <div class="mx-auto max-w-xl px-4">
-  <ol
+  <ol id="post-list"
     class="relative space-y-8 before:absolute before:-ml-px before:h-full before:w-0.5 before:rounded-full before:bg-gray-200 dark:before:bg-gray-700">
 
     {{ for post of posts }}
-      {{ if post.date }}
-        {{# <li class="relative -ms-1.5 flex items-start gap-4"> #}}
-        <li class="relative -ms-1.5 flex items-start gap-4" data-year="{{ post.date.getFullYear() }}">
-          <span class="size-3 shrink-0 rounded-full bg-blue-600"></span>
+    {{ if post.date }}
+    <li class="post-item hidden relative -ms-1.5 flex items-start gap-4" data-year="{{ post.date.getFullYear() }}">
+      <span class="size-3 shrink-0 rounded-full bg-blue-600"></span>
 
-          <div class="-mt-2">
-            <time class="text-xs/none font-medium text-gray-700 dark:text-gray-300">
-              {{ post.date.toLocaleDateString("ja-JP", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              }) }}
-            </time>
+      <div class="-mt-2">
+        <time class="text-xs/none font-medium text-gray-700 dark:text-gray-300">
+          {{ post.date.toLocaleDateString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          }) }}
+        </time>
 
-            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
-              <a href="{{ post.url }}" class="hover:underline">
-                {{ post.title }}
-              </a>
-            </h3>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+          <a href="{{ post.url }}" class="hover:underline">
+            {{ post.title }}
+          </a>
+        </h3>
 
-            {{ if post.description }}
-              <p class="mt-0.5 text-sm text-gray-700 dark:text-gray-100">
-                {{ post.description }}
-              </p>
-            {{ /if }}
-          </div>
-        </li>
-      {{ /if }}
+        {{ if post.description }}
+        <p class="mt-0.5 text-sm text-gray-700 dark:text-gray-100">
+          {{ post.description }}
+        </p>
+        {{ /if }}
+      </div>
+    </li>
+    {{ /if }}
     {{ /for }}
-
   </ol>
+
+  <!-- もっと読む -->
+  <div class="mt-10 text-center">
+    <button
+      id="load-more"
+      class="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+    >
+      もっと読む
+    </button>
+  </div>
 </div>
 
 <script>
-  const checkboxes = document.querySelectorAll(".year-filter");
-  const items = document.querySelectorAll("[data-year]");
+  const PAGE_SIZE = 20;
 
-  function applyFilter() {
-    const selected = [...checkboxes]
+  const checkboxes = [...document.querySelectorAll(".year-filter")];
+  const items = [...document.querySelectorAll(".post-item")];
+  const button = document.getElementById("load-more");
+
+  let visibleCount = 0;
+
+  function getSelectedYears() {
+    return checkboxes
       .filter(cb => cb.checked)
       .map(cb => cb.value);
-
-    items.forEach(item => {
-      if (selected.length === 0) {
-        item.style.display = "";
-      } else {
-        item.style.display = selected.includes(item.dataset.year) ? "" : "none";
-      }
-    });
   }
 
-  checkboxes.forEach(cb => cb.addEventListener("change", applyFilter));
+  function resetView() {
+    visibleCount = 0;
+    items.forEach(item => item.classList.add("hidden"));
+    showNext();
+  }
+
+  function showNext() {
+    const selectedYears = getSelectedYears();
+
+    const filtered = items.filter(item => {
+      if (selectedYears.length === 0) return true;
+      return selectedYears.includes(item.dataset.year);
+    });
+
+    const next = filtered.slice(visibleCount, visibleCount + PAGE_SIZE);
+    next.forEach(el => el.classList.remove("hidden"));
+
+    visibleCount += next.length;
+
+    button.style.display =
+      visibleCount >= filtered.length ? "none" : "";
+  }
+
+  // 初期表示
+  showNext();
+
+  // フィルタ変更時
+  checkboxes.forEach(cb =>
+    cb.addEventListener("change", resetView)
+  );
+
+  // もっと読む
+  button.addEventListener("click", showNext);
 </script>
