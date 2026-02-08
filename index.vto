@@ -3,27 +3,42 @@ layout: base.vto
 title: Front Page
 ---
 
-<section class="py-8 text-center">
-  <h2 class="text-2xl font-bold mb-4">
-    ログ検索
-  </h2>
-  <div id="search" class="mx-auto max-w-xl px-4"></div>
-</section>
-
+{{# 同年の記事をカウント #}}
 {{ set posts = search.pages("url^=/posts/", "date=desc") }}
 
-{{ set years = [] }}
+{{ set yearCounts = {} }}
 
 {{ for post of posts }}
   {{ if post.date }}
     {{ set y = post.date.getFullYear() }}
-    {{ if !years.includes(y) }}
-      {{ void years.push(y) }}
+
+    {{ if yearCounts[y] }}
+      {{# スプレッドでオブジェクトごと再代入 #}}
+      {{ set yearCounts = {
+        ...yearCounts,
+        [y]: yearCounts[y] + 1
+      } }}
+    {{ else }}
+      {{ set yearCounts = {
+        ...yearCounts,
+        [y]: 1
+      } }}
     {{ /if }}
+
   {{ /if }}
 {{ /for }}
 
+{{ set years = Object.keys(yearCounts).map(y => Number(y)) }}
 {{ void years.sort((a, b) => b - a) }}
+
+<section class="py-8 text-center">
+  <h2 class="text-2xl font-bold mb-4">
+    ログ検索
+  </h2>
+  <!-- Pagefind検索フォーム -->
+  <div id="search" class="mx-auto max-w-xl px-4"></div>
+</section>
+
 
 <!-- 年フィルタ -->
 <div class="mx-auto max-w-xl px-4 space-y-4 mb-8">
@@ -43,16 +58,14 @@ title: Front Page
       class="divide-y divide-gray-300 border-t border-gray-300 bg-white dark:divide-gray-600 dark:border-gray-600 dark:bg-gray-900">
       <fieldset class="p-3 space-y-3">
         {{ for year of years }}
-          <label class="inline-flex items-center gap-3">
-            <input
-              type="checkbox"
-              class="year-filter size-5 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:checked:bg-blue-600"
-              value="{{ year }}"
-            />
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
-              {{ year }}年
-            </span>
-          </label>
+        <label class="inline-flex items-center gap-3">
+          <input type="checkbox"
+            class="year-filter size-5 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:checked:bg-blue-600"
+            value="{{ year }}" />
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+            {{ year }}年 ({{ yearCounts[year] }})
+          </span>
+        </label>
         {{ /for }}
       </fieldset>
     </div>
@@ -95,18 +108,19 @@ title: Front Page
     {{ /for }}
   </ol>
 
-  <!-- もっと読む -->
+  <!-- もっと見る -->
   <div class="mt-10 text-center">
     <button
       id="load-more"
       class="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
     >
-      もっと読む
+      もっと見る
     </button>
   </div>
 </div>
 
 <script>
+  // 20件まで表示
   const PAGE_SIZE = 20;
 
   const checkboxes = [...document.querySelectorAll(".year-filter")];
@@ -152,6 +166,6 @@ title: Front Page
     cb.addEventListener("change", resetView)
   );
 
-  // もっと読む
+  // もっと見る
   button.addEventListener("click", showNext);
 </script>
