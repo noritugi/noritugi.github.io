@@ -13,7 +13,31 @@ site.use(pagefind());
 site.use(favicon({
   input: "/favicon.png",
 }));
-site.use(feed());
+site.use(
+  feed({
+    output: ["/posts.rss"],
+
+    // posts/ 配下の記事のみ対象
+    query: "url^=/posts/",
+    sort: "date=desc",
+
+    info: {
+      title: "乗継ログ",
+      description: "インターネット乗継ログ",
+      lang: "ja",
+      generator: true,
+    },
+
+    items: {
+      title: "=title",
+      description: "=description",
+      published: "=date",
+
+      // 記事本文は配信しない
+      content: "記事本文を読む",
+    },
+  }),
+);
 site.use(
   remark({
     remarkPlugins: [remarkShortcode],
