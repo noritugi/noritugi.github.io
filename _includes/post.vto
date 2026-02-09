@@ -2,9 +2,34 @@
 layout: base.vto
 ---
 
-<article class="mx-auto max-w-prose px-4 py-16">
+{{# 記事配列カウンタ #}}
+{{ set allPosts = search.pages("url^=/posts/") }}
+{{ set posts = [] }}
+
+{{ for p of allPosts }}
+  {{ if p.date }}
+    {{ void posts.push(p) }}
+  {{ /if }}
+{{ /for }}
+
+{{ void posts.sort((a, b) => a.date - b.date) }}
+
+{{ set index = -1 }}
+{{ set i = 0 }}
+
+{{ for p of posts }}
+  {{ if p.url === url }}
+    {{ set index = i }}
+  {{ /if }}
+  {{ set i = i + 1 }}
+{{ /for }}
+
+{{ set prevPost = index > 0 ? posts[index - 1] : null }}
+{{ set nextPost = index >= 0 && index < posts.length - 1 ? posts[index + 1] : null }}
+
+<article class="mx-auto max-w-prose px-4 py-16" data-pagefind-body>
   <header class="mb-10">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100" data-pagefind-meta="title">
       {{ title }}
     </h1>
 
@@ -37,4 +62,39 @@ layout: base.vto
   ">
     {{ content }}
   </div>
+
+  <!-- 前後リンク -->
+  {{ if prevPost || nextPost }}
+  <nav class="mt-16 border-t border-gray-200 dark:border-gray-700 pt-8">
+    <ul class="flex justify-between gap-4 text-sm">
+      <li class="flex-1">
+        {{ if prevPost }}
+          <a
+            href="{{ prevPost.url }}"
+            class="block rounded border border-gray-200 p-4 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          >
+            <span class="block text-gray-500 dark:text-gray-400">前の記事</span>
+            <span class="font-medium text-gray-900 dark:text-gray-100">
+              {{ prevPost.title }}
+            </span>
+          </a>
+        {{ /if }}
+      </li>
+
+      <li class="flex-1 text-right">
+        {{ if nextPost }}
+          <a
+            href="{{ nextPost.url }}"
+            class="block rounded border border-gray-200 p-4 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          >
+            <span class="block text-gray-500 dark:text-gray-400">次の記事</span>
+            <span class="font-medium text-gray-900 dark:text-gray-100">
+              {{ nextPost.title }}
+            </span>
+          </a>
+        {{ /if }}
+      </li>
+    </ul>
+  </nav>
+  {{ /if }}
 </article>
