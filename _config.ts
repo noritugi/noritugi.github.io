@@ -6,7 +6,9 @@ import tailwindcss from "lume/plugins/tailwindcss.ts";
 import remark from "lume/plugins/remark.ts";
 import remarkShortcode from "./_plugins/remark-shortcode.ts";
 
-const site = lume();
+const site = lume({
+  location: new URL("https://blog.vuwuv.com"),
+});
 
 site.use(tailwindcss(/* Options */));
 site.use(pagefind());

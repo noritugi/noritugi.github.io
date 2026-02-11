@@ -25,8 +25,7 @@ $content = @"
 title: $title
 description: 
 date: $year-$month-$day
-tags:
-  - hoge
+layout: post.vto
 ---
 
 <!-- more -->
