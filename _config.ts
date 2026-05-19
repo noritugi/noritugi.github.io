@@ -46,8 +46,7 @@ site.use(
 );
 site.use(
   remark({
-    remarkPlugins: [remarkShortcode],
-    remarkPlugins: [remarkYoutube],
+    remarkPlugins: [remarkShortcode,remarkYoutube],
   }),
 );
 
