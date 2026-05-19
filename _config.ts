@@ -5,6 +5,7 @@ import feed from "lume/plugins/feed.ts";
 import tailwindcss from "lume/plugins/tailwindcss.ts";
 import remark from "lume/plugins/remark.ts";
 import remarkShortcode from "./_plugins/remark-shortcode.ts";
+import remarkYoutube from "./_plugins/remark-youtube.ts";
 import robots from "lume/plugins/robots.ts";
 
 const site = lume({
@@ -46,6 +47,7 @@ site.use(
 site.use(
   remark({
     remarkPlugins: [remarkShortcode],
+    remarkPlugins: [remarkYoutube],
   }),
 );
 
