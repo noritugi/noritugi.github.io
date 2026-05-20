@@ -33,7 +33,7 @@ function renderYouTube(id: string): string {
        style="padding-bottom: 56.25%;">
     <iframe
       class="absolute top-0 left-0 w-full h-full"
-      src="https://www.youtube.com/embed/${id}"
+      src="https://www.youtube-nocookie.com/embed/${id}"
       title="YouTube video player"
       loading="lazy"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
