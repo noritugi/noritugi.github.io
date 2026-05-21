@@ -1,2 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+/* inline codeのバッククォートの除去 */
+.prose code::before,
+.prose code::after {
+  content: none !important;
+}
